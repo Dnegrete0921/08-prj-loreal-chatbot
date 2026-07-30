@@ -1,40 +1,74 @@
-// Copy this code into your Cloudflare Worker script
+// Cloudflare Worker helper for this project.
+// Keep your OpenAI key in the Worker secret named OPENAI_API_KEY.
 
 export default {
   async fetch(request, env) {
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Content-Type': 'application/json'
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Content-Type": "application/json",
     };
 
-    // Handle CORS preflight requests
-    if (request.method === 'OPTIONS') {
+    // Browser preflight support
+    if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
 
-    const apiKey = env.OPENAI_API_KEY; // Make sure to name your secret OPENAI_API_KEY in the Cloudflare Workers dashboard
-    const apiUrl = 'https://api.openai.com/v1/chat/completions';
-    const userInput = await request.json();
+    // Only allow POST from the frontend
+    if (request.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: corsHeaders,
+      });
+    }
 
-    const requestBody = {
-      model: 'gpt-4o',
-      messages: userInput.messages,
-      max_completion_tokens: 300,
-    };
+    try {
+      const body = await request.json();
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
+      // Validate messages so the Worker fails safely
+      if (!Array.isArray(body.messages)) {
+        return new Response(
+          JSON.stringify({ error: "Request must include a messages array." }),
+          {
+            status: 400,
+            headers: corsHeaders,
+          },
+        );
+      }
 
-    const data = await response.json();
+      const openAIResponse = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "gpt-4.1",
+            messages: body.messages,
+          }),
+        },
+      );
 
-    return new Response(JSON.stringify(data), { headers: corsHeaders });
-  }
+      const data = await openAIResponse.json();
+
+      return new Response(JSON.stringify(data), {
+        status: openAIResponse.status,
+        headers: corsHeaders,
+      });
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error: "Worker could not process this request.",
+          details: String(error.message || error),
+        }),
+        {
+          status: 500,
+          headers: corsHeaders,
+        },
+      );
+    }
+  },
 };
