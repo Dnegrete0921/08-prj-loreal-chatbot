@@ -60,6 +60,28 @@ body {
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
 }
 
+.latest-question-card {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-left: 4px solid #1f1f1f;
+  border-radius: 10px;
+  background: #f3efe6;
+}
+
+.latest-question-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.latest-question-text {
+  margin-top: 6px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
 .chat-window {
   height: 360px;
   border: 1px solid var(--border);
@@ -67,26 +89,47 @@ body {
   padding: 16px;
   overflow-y: auto;
   background: #fcfcfa;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .msg {
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   max-width: 85%;
-  line-height: 1.5;
-  word-wrap: break-word;
 }
 
 .msg.user {
   margin-left: auto;
-  background: #1f1f1f;
-  color: #ffffff;
+  align-items: flex-end;
 }
 
-.msg.ai {
+.msg-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.msg-bubble {
+  padding: 10px 12px;
+  border-radius: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.msg.user .msg-bubble {
+  background: #1f1f1f;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+.msg.ai .msg-bubble {
   background: #ece8de;
   color: #232323;
+  border-bottom-left-radius: 4px;
 }
 
 .chat-form {

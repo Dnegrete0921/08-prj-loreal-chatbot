@@ -24,7 +24,48 @@ export default {
     }
 
     try {
-      const body = await request.json();
+      // Read the raw body first so we can give a clear error if it is empty.
+      const rawBody = await request.text();
+
+      if (!rawBody.trim()) {
+        return new Response(
+          JSON.stringify({
+            error: "Request body is empty. Send JSON with a messages array.",
+          }),
+          {
+            status: 400,
+            headers: corsHeaders,
+          },
+        );
+      }
+
+      let body;
+
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        return new Response(
+          JSON.stringify({
+            error: "Request body must be valid JSON.",
+          }),
+          {
+            status: 400,
+            headers: corsHeaders,
+          },
+        );
+      }
+
+      if (!env.OPENAI_API_KEY) {
+        return new Response(
+          JSON.stringify({
+            error: "Missing OPENAI_API_KEY Worker secret.",
+          }),
+          {
+            status: 500,
+            headers: corsHeaders,
+          },
+        );
+      }
 
       // Validate messages so the Worker fails safely
       if (!Array.isArray(body.messages)) {
@@ -52,7 +93,17 @@ export default {
         },
       );
 
-      const data = await openAIResponse.json();
+      const responseText = await openAIResponse.text();
+      let data;
+
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        data = {
+          error: "OpenAI returned a non-JSON response.",
+          details: responseText,
+        };
+      }
 
       return new Response(JSON.stringify(data), {
         status: openAIResponse.status,
